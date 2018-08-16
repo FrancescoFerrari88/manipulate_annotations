@@ -1,5 +1,5 @@
-#!/Users/ferrari/anaconda3/bin/python
-# see that happens
+#!/home/ferrari/anaconda3/bin/python
+# branch "print_to_screen"
 import argparse
 import sys
 import os
@@ -81,6 +81,8 @@ def info_to_dict(info):
         pair = j.split()
         if len(pair) == 2:
             key,value = pair[0],pair[1]
+            if len(value.split('"')) > 1:
+                value = value.split('"')[1]
 
             if not key in dict_info:
                 dict_info[key] = value
@@ -193,29 +195,35 @@ def make_bed(list_dict, feature, from_where, before, after):
 
     return bed_out_list
 
+
 def main():
 
     parser = parse_args()
     arg = parser.parse_args()
-    print(arg.gtf_file, arg.FEATURE)
+    #print(arg.gtf_file, arg.FEATURE)
 
-    if arg.out_file == None:
-        gtf_file_name = "_".join(os.path.basename(arg.gtf_file).split(".")[:-1])
+    if arg.out_file != None:
+        with open(arg.gtf_file) as in_file, open(arg.out_file,"w") as out_file:
 
-        arg.out_file = "{}_{}_{}_window{}-{}.bed".format(gtf_file_name, arg.FEATURE, arg.from_what,arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
-    print(arg.out_file)
+            for line in in_file:
+                lista = line.strip().split("\t")
+                list_dict = line_to_dict(lista)
+                if len(list_dict) > 0:
+                    printing_line = make_bed(list_dict, arg.FEATURE, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+                    if len(printing_line) > 0:
+                        printing_line[-1] = printing_line[-1]+"\n"
+                        out_file.write("\t".join(printing_line))
+    else:
+        with open(arg.gtf_file) as in_file:
+            for line in in_file:
+                lista = line.strip().split("\t")
+                list_dict = line_to_dict(lista)
+                if len(list_dict) > 0:
+                    printing_line = make_bed(list_dict, arg.FEATURE, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+                    if len(printing_line) > 0:
+                        #printing_line[-1] = printing_line[-1]+"\n"
+                        print("\t".join(printing_line))
 
-    with open(arg.gtf_file) as in_file, open(arg.out_file,"w") as out_file:
-
-        for line in in_file:
-
-            lista = line.strip().split("\t")
-            list_dict = line_to_dict(lista)
-            if len(list_dict) > 0:
-                printing_line = make_bed(list_dict, arg.FEATURE, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
-                if len(printing_line) > 0:
-                    printing_line[-1] = printing_line[-1]+"\n"
-                    out_file.write("\t".join(printing_line))
 
 
 if __name__ == "__main__" :
