@@ -1,5 +1,5 @@
 #!/home/ferrari/anaconda3/bin/python
-# branch "print_to_screen"
+# branch "many_features_at_once"
 import argparse
 import sys
 import os
@@ -7,11 +7,11 @@ import textwrap
 
 
 def parse_args(defaults={"verbose":False,
-                         "feature_to_extract":"genes",
+                         "feature_to_extract":["genes","TSS"],
                          "from_where":"gene",
                          "before":0,
                          "after":0,
-                         "out_file":None,
+                         "out_dir":"./",
                          "percentile_range":None}):
 
     """parse arguments from the command line"""
@@ -30,10 +30,10 @@ def parse_args(defaults={"verbose":False,
                        help="gencode gtf file from which you want to extract genomic coordinates")
     # general arguments
     general = parser.add_argument_group('general arguments')
-    general.add_argument("-o", "--output_file_name",
-                         dest="out_file",
-                         help="output file name",
-                         default=defaults["out_file"])
+    general.add_argument("-o", "--output_directory",
+                         dest="out_dir",
+                         help="output directory",
+                         default=defaults["out_dir"])
     general.add_argument("-h","--help",
                          action="help",
                          help="show this help message and exit")
@@ -44,6 +44,7 @@ def parse_args(defaults={"verbose":False,
                          default=defaults["verbose"])
     general.add_argument("-f","--feature",
                          dest="FEATURE",
+                         nargs="*",
                          choices=["genes","TSS","TES"],
                          default=defaults["feature_to_extract"],
                          help="the feature that you want to extract form the gtf file")
@@ -126,7 +127,7 @@ def line_to_dict(gtf_line_list):
 
 
 
-def make_bed(list_dict, feature, from_where, before, after):
+def make_beds(list_dict, feature, from_where, before, after):
 
     bed_out_list = []
 
@@ -197,32 +198,33 @@ def make_bed(list_dict, feature, from_where, before, after):
 
 
 def main():
-
+    l = 0
     parser = parse_args()
-    arg = parser.parse_args()
+    arg = parser.parse_args("ciao.txt".split())
+    print(parser.parse_args("-f TSS genes TES -a 10 ciao.txt".split()))
     #print(arg.gtf_file, arg.FEATURE)
 
-    if arg.out_file != None:
-        with open(arg.gtf_file) as in_file, open(arg.out_file,"w") as out_file:
+    with open(arg.gtf_file) as in_file:
 
-            for line in in_file:
-                lista = line.strip().split("\t")
-                list_dict = line_to_dict(lista)
-                if len(list_dict) > 0:
-                    printing_line = make_bed(list_dict, arg.FEATURE, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+        for line in in_file:
+            lista = line.strip().split("\t")
+            list_dict = line_to_dict(lista)
+            if len(list_dict) > 0:
+                l += 1
+                if l == 1:
+                    ref_dict = {}
+                    for feature_ in arg.FEATURE:
+                        ref_dict[feature_] = open("{}.bed",'a')
+                        printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+                        if len(printing_line) > 0:
+                            printing_line[-1] = printing_line[-1]+"\n"
+                            ref_dict[feature].write("\t".join(printing_line))
+                else:
+                    for feature_ in arg.FEATURE:
+                        printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
                     if len(printing_line) > 0:
                         printing_line[-1] = printing_line[-1]+"\n"
-                        out_file.write("\t".join(printing_line))
-    else:
-        with open(arg.gtf_file) as in_file:
-            for line in in_file:
-                lista = line.strip().split("\t")
-                list_dict = line_to_dict(lista)
-                if len(list_dict) > 0:
-                    printing_line = make_bed(list_dict, arg.FEATURE, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
-                    if len(printing_line) > 0:
-                        #printing_line[-1] = printing_line[-1]+"\n"
-                        print("\t".join(printing_line))
+                        ref_dict[feature_].write("\t".join(printing_line))
 
 
 
