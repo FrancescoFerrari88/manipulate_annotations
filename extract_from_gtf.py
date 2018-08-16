@@ -127,7 +127,7 @@ def line_to_dict(gtf_line_list):
 
 
 
-def make_beds(list_dict, feature, from_where, before, after):
+def make_bed(list_dict, feature, from_where, before, after):
 
     bed_out_list = []
 
@@ -200,31 +200,26 @@ def make_beds(list_dict, feature, from_where, before, after):
 def main():
     l = 0
     parser = parse_args()
-    arg = parser.parse_args("ciao.txt".split())
-    print(parser.parse_args("-f TSS genes TES -a 10 ciao.txt".split()))
-    #print(arg.gtf_file, arg.FEATURE)
+    arg = parser.parse_args()
 
     with open(arg.gtf_file) as in_file:
+
+        ref_dict = {}
+        for feature_ in arg.FEATURE:
+            ref_dict[feature_] = open("{}.bed".format(feature_),'a')
 
         for line in in_file:
             lista = line.strip().split("\t")
             list_dict = line_to_dict(lista)
             if len(list_dict) > 0:
-                l += 1
-                if l == 1:
-                    ref_dict = {}
-                    for feature_ in arg.FEATURE:
-                        ref_dict[feature_] = open("{}.bed",'a')
-                        printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
-                        if len(printing_line) > 0:
-                            printing_line[-1] = printing_line[-1]+"\n"
-                            ref_dict[feature].write("\t".join(printing_line))
-                else:
-                    for feature_ in arg.FEATURE:
-                        printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+                for feature_ in arg.FEATURE:
+                    printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
                     if len(printing_line) > 0:
                         printing_line[-1] = printing_line[-1]+"\n"
                         ref_dict[feature_].write("\t".join(printing_line))
+
+        for feature_ in arg.FEATURE:
+            ref_dict[feature_].close()
 
 
 
