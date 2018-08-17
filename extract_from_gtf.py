@@ -1,5 +1,8 @@
 #!/home/ferrari/anaconda3/bin/python
 # branch "many_features_at_once"
+
+#todo: check why, if I run the script twice, the files don't get updated
+
 import argparse
 import sys
 import os
