@@ -12,6 +12,12 @@ def parse_args(defaults={"verbose":False,
                          "before":0,
                          "after":0,
                          "out_dir":"./",
+                         "before_tss":1000,
+                         "after_tss":500,
+                         "before_gene_start_site":0,
+                         "after_gene_end_site":0,
+                         "before_tes":500,
+                         "after_tes":500,
                          "percentile_range":None}):
 
     """parse arguments from the command line"""
@@ -53,17 +59,41 @@ def parse_args(defaults={"verbose":False,
                          choices=["gene","transcript"],
                          default=defaults["from_where"],
                          help="Do you want to extract TSS/TES info from genes or transcripts?")
-    general.add_argument("-b","--before_feature",
-                         dest="BEFORE_FEATURE",
+    general.add_argument("-b_tss","--before_tss",
+                         dest="BEFORE_TSS",
                          type=int,
-                         help="number of bp to include before the feature of interest",
-                         default=defaults["before"]
+                         help="number of bp to include before the transcription start site",
+                         default=defaults["before_tss"]
                          )
-    general.add_argument("-a","--after_feature",
-                         dest="AFTER_FEATURE",
+    general.add_argument("-a_tss","--after_tss",
+                         dest="AFTER_TSS",
                          type=int,
-                         help="number of bp to include after the feature of interest",
-                         default=defaults["after"]
+                         help="number of bp to include after the transcription start site",
+                         default=defaults["after_tss"]
+                         )
+    general.add_argument("-b_tes","--before_tes",
+                         dest="BEFORE_TES",
+                         type=int,
+                         help="number of bp to include before the transcription end site",
+                         default=defaults["before_tes"]
+                         )
+    general.add_argument("-a_tes","--after_tes",
+                         dest="AFTER_TES",
+                         type=int,
+                         help="number of bp to include after the transcription end site",
+                         default=defaults["after_tes"]
+                         )
+    general.add_argument("-b_gene","--before_gene",
+                         dest="BEFORE_GENE",
+                         type=int,
+                         help="number of bp to include before the gene body start site",
+                         default=defaults["before_gene_start_site"]
+                         )
+    general.add_argument("-a_gene","--after_gene",
+                         dest="AFTER_GENE",
+                         type=int,
+                         help="number of bp to include after the gene body end site",
+                         default=defaults["after_gene_end_site"]
                          )
     return parser
 
@@ -127,7 +157,7 @@ def line_to_dict(gtf_line_list):
 
 
 
-def make_bed(list_dict, feature, from_where, before, after):
+def make_bed(list_dict, feature, from_where, arg):
 
     bed_out_list = []
 
@@ -135,8 +165,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         if list_dict["genomic_strand"] == '+':
             bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_start_location"]) - before),
-                str(int(list_dict["genomic_end_location"]) + after),
+                str(int(list_dict["genomic_start_location"]) - arg.BEFORE_GENE),
+                str(int(list_dict["genomic_end_location"]) + arg.AFTER_GENE),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -145,8 +175,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         elif list_dict["genomic_strand"] == '-':
             bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_start_location"]) - after),
-                str(int(list_dict["genomic_end_location"]) + before),
+                str(int(list_dict["genomic_start_location"]) - arg.AFTER_GENE),
+                str(int(list_dict["genomic_end_location"]) + arg.BEFORE_GENE),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -156,8 +186,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         if list_dict["genomic_strand"] == '+':
              bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_start_location"]) - before),
-                str(int(list_dict["genomic_start_location"]) + after),
+                str(int(list_dict["genomic_start_location"]) - arg.BEFORE_TSS),
+                str(int(list_dict["genomic_start_location"]) + arg.AFTER_TSS),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -166,8 +196,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         elif list_dict["genomic_strand"] == '-':
             bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_end_location"]) - after),
-                str(int(list_dict["genomic_end_location"]) + before),
+                str(int(list_dict["genomic_end_location"]) - arg.AFTER_TSS),
+                str(int(list_dict["genomic_end_location"]) + arg.BEFORE_TSS),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -177,8 +207,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         if list_dict["genomic_strand"] == '+':
             bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_end_location"]) - before),
-                str(int(list_dict["genomic_end_location"]) + after),
+                str(int(list_dict["genomic_end_location"]) - arg.BEFORE_TES),
+                str(int(list_dict["genomic_end_location"]) + arg.AFTER_TES),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -187,8 +217,8 @@ def make_bed(list_dict, feature, from_where, before, after):
         elif list_dict["genomic_strand"] == '-':
             bed_out_list = [
                 list_dict["chromosome_name"],
-                str(int(list_dict["genomic_start_location"]) - after),
-                str(int(list_dict["genomic_start_location"]) + before),
+                str(int(list_dict["genomic_start_location"]) - arg.AFTER_TES),
+                str(int(list_dict["genomic_start_location"]) + arg.BEFORE_TES),
                 list_dict["additional_information"]["gene_id"],
                 list_dict["score"],
                 list_dict["genomic_strand"]
@@ -201,7 +231,7 @@ def main():
     l = 0
     parser = parse_args()
     arg = parser.parse_args()
-
+    print(arg)
     with open(arg.gtf_file) as in_file:
 
         ref_dict = {}
@@ -213,7 +243,7 @@ def main():
             list_dict = line_to_dict(lista)
             if len(list_dict) > 0:
                 for feature_ in arg.FEATURE:
-                    printing_line = make_bed(list_dict, feature_, arg.from_what, arg.BEFORE_FEATURE, arg.AFTER_FEATURE)
+                    printing_line = make_bed(list_dict, feature_, arg.from_what, arg)
                     if len(printing_line) > 0:
                         printing_line[-1] = printing_line[-1]+"\n"
                         ref_dict[feature_].write("\t".join(printing_line))
